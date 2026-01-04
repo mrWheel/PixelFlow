@@ -1,7 +1,7 @@
 
 #include "PixelFlow.h"
 
-using namespace pixelFlow {
+namespace pixelFlow {
 
 /************************************************************
     PixelFlow Animation Engine (Parallel, Non-Blocking)

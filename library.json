@@ -1,9 +1,17 @@
-"name": "PixelFlow",
- "version": "1.0.0",
- "headers": "PixelFlow.h",
- "authors": [ { "name": "Willem Aandewiel (mrWheel)" } ],
- "keywords": "PixelFlow, LED, WS2812, APA102, FastLED",
- "description": "A library for controlling addressable LED strips with various effects and animations.",
- "repository": {
-  "type": "git",
-  "url": "https://github.com/mrWheel/PixelFlow.git"
+{
+  "name": "PixelFlow",
+  "version": "1.0.0",
+  "description": "Realtime parallel LED animation engine for ESP32 (FreeRTOS, JSON control)",
+  "authors": [{
+      "name": "Willem Aandewiel (mnrWheel)",
+      "email": "Willem+PixelFlow@Aandewiel.nl",
+      "url": "https://github.com/mrWheel/PixelFlow.git",
+    }],
+  "keywords": ["led", "ws2812", "neopixel", "esp32", "animation", "freertos"],
+  "frameworks": ["arduino"],
+  "platforms": ["espressif32"],
+  "dependencies": [
+    { "name": "ArduinoJson", "owner": "bblanchon", "version": "^7" },
+    { "name": "Adafruit NeoPixel", "owner": "adafruit", "version": "^1.12.0" }
+  ]
+}
