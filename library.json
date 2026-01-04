@@ -1,0 +1,9 @@
+"name": "PixelFlow",
+ "version": "1.0.0",
+ "headers": "PixelFlow.h",
+ "authors": [ { "name": "Willem Aandewiel (mrWheel)" } ],
+ "keywords": "PixelFlow, LED, WS2812, APA102, FastLED",
+ "description": "A library for controlling addressable LED strips with various effects and animations.",
+ "repository": {
+  "type": "git",
+  "url": "https://github.com/mrWheel/PixelFlow.git"
