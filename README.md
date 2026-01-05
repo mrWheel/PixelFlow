@@ -4,12 +4,12 @@ Realtime Parallel LED Animation Engine for ESP32
 **PixelFlow** is a high-performance, non-blocking LED animation engine designed for addressable RGB LED strips (WS2812 / NeoPixel compatible) on ESP32.
 
 It provides:
-	•	Fully parallel per-pixel animations
-	•	A real-time FreeRTOS update loop
-	•	JSON-based animation control
-	•	Group animations (chase / comet / ramp)
-	•	Non-blocking operation (no delay() anywhere)
-	•	Thread-safe API (can be called from any task)
+* Fully parallel per-pixel animations
+* A real-time FreeRTOS update loop
+* JSON-based animation control
+* Group animations (chase / comet / ramp)
+* Non-blocking operation (no delay() anywhere)
+* Thread-safe API (can be called from any task)
 
 **PixelFlow** is designed as a general-purpose pixel animation engine and is not tied to Adafruit or NeoPixel APIs at the application level.
 
@@ -20,19 +20,19 @@ It provides:
 Every pixel is an independent state machine.
 
 Each pixel has:
-	•	color (r,g,b)
-	•	base brightness
-	•	current brightness
-	•	animation mode
-	•	animation type
-	•	interval, phase, timers, duration, and end behavior
+* color (r,g,b)
+* base brightness
+* current brightness
+* animation mode
+* animation type
+* interval, phase, timers, duration, and end behavior
 
 Pixels run in parallel:
-	•	Pixel 0 can pulse
-	•	Pixel 1–3 can blink
-	•	Pixel 10 can be part of a chase
-	•	Pixel 5–12 can randomize color
-	•	No animation affects any other pixel unless explicitly selected
+* Pixel 0 can pulse
+* Pixel 1–3 can blink
+* Pixel 10 can be part of a chase
+* Pixel 5–12 can randomize color
+* No animation affects any other pixel unless explicitly selected
 
 All animations are non-blocking and time-driven.
 
@@ -45,17 +45,17 @@ A FreeRTOS task updates the engine at about 100Hz.
 **PixelFlow** deliberately separates pixel selection from JSON.
 
 You select which pixels you want using C++:
-	•	int index
-	•	PIXEL_ALL
-	•	{1,3,5} initializer lists
+* int index
+* PIXEL_ALL
+* {1,3,5} initializer lists
 
 JSON only describes WHAT should happen.
 
 This allows:
-	•	#define, constexpr, enums
-	•	no string building
-	•	no runtime parsing of pixel lists
-	•	full compile-time safety
+* #define, constexpr, enums
+* no string building
+* no runtime parsing of pixel lists
+* full compile-time safety
 
 Example:
 ```
@@ -84,11 +84,11 @@ You must call both begin() and startTask().
 ## PIXEL SELECTION API
 
 **PixelFlow** supports three ways to select pixels.
-	1.	Single pixel
+1.	Single pixel
 leds.setPixel(5, json);
-	2.	Multiple pixels
+2.	Multiple pixels
 leds.setPixel({1,3,7}, json);
-	3.	All pixels
+3.	All pixels
 leds.setPixel(**PixelFlow**::PIXEL_ALL, json);
 
 These work with defines, enums and constants:
@@ -106,6 +106,7 @@ The JSON describes what should happen to the selected pixels.
 
 Supported fields:
 
+```
 mode        “off” | “on” | “intensity” | “animate” | “ramp”
 type        depends on mode
 color       “#RRGGBB” or “random”
@@ -115,7 +116,7 @@ interval    milliseconds
 duration    milliseconds, 0 = infinite
 end         “keep” | “off” | “on”
 width       ramp only
-
+```
 ⸻
 
 ## MODES
@@ -224,10 +225,10 @@ duration   milliseconds (0 = infinite)
 end        “keep” | “off” | “on”
 
 Behavior:
-	•	Head fades in
-	•	Middle is full brightness
-	•	Tail fades out
-	•	All other pixels untouched
+* Head fades in
+* Middle is full brightness
+* Tail fades out
+* All other pixels untouched
 
 ⸻
 
@@ -264,10 +265,10 @@ This is especially useful when building commands dynamically.
 All setPixel calls are mutex-protected.
 
 You can call setPixel from:
-	•	main loop
-	•	WiFi callbacks
-	•	MQTT handlers
-	•	FreeRTOS tasks
+* main loop
+* WiFi callbacks
+* MQTT handlers
+* FreeRTOS tasks
 
 **PixelFlow** handles synchronization internally.
 
@@ -276,22 +277,22 @@ You can call setPixel from:
 ## WHY **PixelFlow** IS DIFFERENT
 
 Traditional LED libraries:
-	•	one animation at a time
-	•	blocking delays
-	•	global state
+* one animation at a time
+* blocking delays
+* global state
 
 **PixelFlow**:
-	•	every pixel runs independently
-	•	animations never block
-	•	multiple animations can run simultaneously
-	•	group effects are layered on top
+* every pixel runs independently
+* animations never block
+* multiple animations can run simultaneously
+* group effects are layered on top
 
 This allows:
-	•	status LEDs
-	•	animations
-	•	progress indicators
-	•	warnings
-	•	UI feedback
+* status LEDs
+* animations
+* progress indicators
+* warnings
+* UI feedback
 
 all at the same time on one strip.
 
