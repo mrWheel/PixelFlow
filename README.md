@@ -49,7 +49,7 @@ You select which pixels you want using C++:
 * PIXEL_ALL
 * {1,3,5} initializer lists
 
-JSON only describes WHAT should happen.
+JSON describes WHAT should happen.
 
 This allows:
 * #define, constexpr, enums
