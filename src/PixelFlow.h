@@ -43,7 +43,7 @@
     JSON COMMANDOS
     ========================================================
 
-    (Nieuwe stijl: zonder "pixel" veld)
+    (Nieuwe stijl:
 
         leds.setPixel(4, R"({
             "mode":"animate",
