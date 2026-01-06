@@ -42,7 +42,7 @@ A FreeRTOS task updates the engine at about 100Hz.
 
 ### KEY CONCEPT: PIXEL SELECTION IS NOT JSON
 
-**PixelFlow** deliberately separates pixel selection from JSON.
+**PixelFlow** separates pixel selection from JSON.
 
 You select which pixels you want using C++:
 * int index
