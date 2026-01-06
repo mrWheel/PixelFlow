@@ -68,9 +68,9 @@ leds.setPixel(LED_STATUS, “{ "mode":"blink", "interval":200 }”);
 ## INITIALIZATION
 
 Create and start **PixelFlow**:
-
-**PixelFlow** leds(DATA_PIN, LED_COUNT);
 ```
+PixelFlow leds(DATA_PIN, LED_COUNT);
+
 void setup()
 {
   leds.begin();
@@ -211,7 +211,7 @@ Ramp mode creates a moving head with fading tail (comet / chase).
 
 Example:
 ```
-leds.setPixel(**PixelFlow**::PIXEL_ALL,
+leds.setPixel(PixelFlow::PIXEL_ALL,
 “{ "mode":"ramp", "type":"up", "width":5, "color":"#FF0000", "interval":40 }”);
 ```
 Fields:
