@@ -6,7 +6,7 @@ namespace pixelFlow {
 //-- LET OP: versie nummer ook opnemen in:
 //-- library.json
 //-- library.properties
-const char* PROG_VERSION = "v1.1.0";
+const char* PROG_VERSION = "v1.2.0";
 
 /************************************************************
     PixelFlow Animation Engine (Parallel, Non-Blocking)
