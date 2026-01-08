@@ -1,6 +1,11 @@
 
 #include "PixelFlow.h"
 
+//-- LET OP: versie nummer ook opnemen in:
+//-- library.json
+//-- library.properties
+const char* PROG_VERSION = "v1.1.0";
+
 namespace pixelFlow {
 
 /************************************************************
@@ -27,10 +32,6 @@ PixelFlow::PixelFlow(uint8_t pin, uint16_t count)
 
 void PixelFlow::begin()
 {
-  //-- LET OP: versie nummer ook opnemen in:
-  //-- library.json
-  //-- library.properties
-    const char* PROG_VERSION = "v1.1.0";
     strip.begin();
     strip.show();
 }
