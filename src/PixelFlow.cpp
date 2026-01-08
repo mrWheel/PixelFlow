@@ -6,7 +6,7 @@ namespace pixelFlow {
 //-- LET OP: versie nummer ook opnemen in:
 //-- library.json
 //-- library.properties
-const char* PROG_VERSION = "v1.2.0";
+const char* PROG_VERSION = "v1.2.1";
 
 /************************************************************
     PixelFlow Animation Engine (Parallel, Non-Blocking)
@@ -880,19 +880,22 @@ void PixelFlow::update()
                 p.pending.active = false;
 
                 //-- Initialize animation state based on mode
+                //-- (preserve animDurationMs from pending command)
                 switch (p.mode)
                 {
                     case PixelMode::OFF:
                         p.animType = PixelAnimType::NONE;
                         p.currentBrightness = 0;
                         p.animDurationMs = 0;
+                        p.animStartTime = now;
                         break;
 
                     case PixelMode::ON:
                     case PixelMode::INTENSITY:
                         p.animType = PixelAnimType::NONE;
                         p.currentBrightness = p.baseBrightness;
-                        p.animDurationMs = 0;
+                        p.animStartTime = now;
+                        //-- Do NOT reset animDurationMs here - preserve from pending command
                         break;
 
                     case PixelMode::ANIMATE:

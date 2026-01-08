@@ -14,8 +14,12 @@ PixelFlow leds(LED_PIN, LED_COUNT);
 // Helper: start "random" animation on all 10 pixels
 static void startRandomAll()
 {
+  Serial.println("Starting random animation on all pixels for 4 seconds...");
   leds.setPixel(PixelFlow::PIXEL_ALL,
-      "{ \"mode\":\"animate\", \"type\":\"random\", \"interval\":250, \"intensity\":180, \"duration\":0, \"end\":\"keep\" }");
+      "{ \"mode\":\"animate\", \"type\":\"random\", \"interval\":250, \"intensity\":180, \"duration\":4000, \"end\":\"off\" }");
+  Serial.println("Setting ON animation on pixel 5 for 2 seconds...");
+  leds.setPixel(PixelFlow::PIXEL_ALL,
+      "{ \"mode\":\"on\", \"intensity\":120, \"color\":\"#00FF00\", \"duration\":2000, \"end\":\"keep\" }");
 }
 
 // Helper: demonstrate one mode on a specific pixel (index 0..9)
@@ -24,55 +28,69 @@ static void demoPixelMode(uint8_t idx)
   switch (idx)
   {
     case 0:
-      // OFF
+      Serial.println("Switch pixel " + String(idx) + " OFF");  // OFF
       leds.setPixel(idx, "{ \"mode\":\"off\" }");
       break;
 
     case 1:
-      // ON (fixed color)
+      Serial.println("Switch pixel " + String(idx) + " ON (green)");
       leds.setPixel(idx, "{ \"mode\":\"on\", \"color\":\"#00FF00\", \"intensity\":160 }");
       break;
 
     case 2:
       // INTENSITY (dim white)
+      Serial.println("Set pixel " + String(idx) + " to INTENSITY (dim white)");
       leds.setPixel(idx, "{ \"mode\":\"intensity\", \"color\":\"#FFFFFF\", \"intensity\":40 }");
       break;
 
     case 3:
       // ANIMATE: BLINK (red)
+      Serial.println("Set pixel " + String(idx) + " to ANIMATE: BLINK (red)");
       leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"blink\", \"color\":\"#FF0000\", \"interval\":150, \"duration\":0, \"end\":\"keep\" }");
       break;
 
     case 4:
-      // ANIMATE: PULSE (blue)
-      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"pulse\", \"color\":\"#0000FF\", \"interval\":40, \"duration\":0, \"end\":\"keep\" }");
+      // ANIMATE: PULSE (groen)
+      Serial.println("Set pixel " + String(idx) + " to ANIMATE: PULSE (green)");
+      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"pulse\", \"color\":\"#00FF00\", \"interval\":150, \"duration\":0, \"end\":\"keep\" }");
       break;
 
     case 5:
-      // ANIMATE: RANDOM (fast)
-      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"random\", \"interval\":80, \"intensity\":200, \"duration\":0, \"end\":\"keep\" }");
+      // ANIMATE: PULSE (blue)
+      Serial.println("Set pixel " + String(idx) + " to ANIMATE: PULSE (blue)");
+      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"pulse\", \"color\":\"#0000FF\", \"interval\":150, \"duration\":0, \"end\":\"keep\" }");
       break;
 
     case 6:
+      // ANIMATE: RANDOM (fast)
+      Serial.println("Set pixel " + String(idx) + " to ANIMATE: RANDOM (fast)");
+      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"random\", \"interval\":80, \"intensity\":200, \"duration\":0, \"end\":\"keep\" }");
+      break;
+
+    case 7:
       // RAMP (up) across a subset (0..9) doesn't make sense per-pixel, so we demo a short ramp on ALL
       // but to keep the "per pixel 0-9" story, we trigger it when idx==6.
+      Serial.println("Set ALL pixels to RAMP UP (gray) for 2.5 seconds");
       leds.setPixel(PixelFlow::PIXEL_ALL,
           "{ \"mode\":\"ramp\", \"type\":\"up\", \"width\":4, \"color\":\"#202020\", \"interval\":35, \"intensity\":180, \"duration\":2500, \"end\":\"keep\" }");
       break;
 
-    case 7:
+    case 8:
       // ON (purple)
+      Serial.println("Switch pixel " + String(idx) + " ON (purple)");
       leds.setPixel(idx, "{ \"mode\":\"on\", \"color\":\"#8000FF\", \"intensity\":180 }");
       break;
 
-    case 8:
+    case 9:
       // OFF then ON after a short duration-like behavior: do a blink that ends OFF
-      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"blink\", \"color\":\"#FFFFFF\", \"interval\":120, \"duration\":1200, \"end\":\"off\" }");
+      Serial.println("Set pixel " + String(idx) + " to BLINK that ends ON");
+      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"blink\", \"color\":\"#FFFFFF\", \"interval\":120, \"duration\":1200, \"end\":\"on\" }");
       break;
 
-    case 9:
+    case 10:
       // PULSE that ends ON
-      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"pulse\", \"color\":\"#00FFFF\", \"interval\":35, \"duration\":1500, \"end\":\"on\", \"intensity\":200 }");
+      Serial.println("Set pixel " + String(idx) + " to PULSE that ends OFF");
+      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"pulse\", \"color\":\"#00FFFF\", \"interval\":35, \"duration\":1500, \"end\":\"off\", \"intensity\":200 }");
       break;
 
     default:
@@ -83,14 +101,41 @@ static void demoPixelMode(uint8_t idx)
 void setup()
 {
   Serial.begin(115200);
-  delay(200);
+  while(!Serial) { delay(1000); }  // wacht op seriële poort
+  delay(2000);
+  Serial.println("\nPixelFlow Basic Example");
 
   leds.begin();
   leds.startTask();
 
   // Start with random across all 10 pixels
   startRandomAll();
-}
+  leds.setPixel(PixelFlow::PIXEL_ALL,
+      "{ \"mode\":\"off\"}");
+  Serial.print("Now wait for 10 seconds ...");
+  delay(1000);
+  Serial.print("10...");
+  delay(1000);
+  Serial.print("9...");
+  delay(1000);
+  Serial.print("8...");
+  delay(1000);
+  Serial.print("7...");
+  delay(1000);
+  Serial.print("6...");
+  delay(1000);
+  Serial.print("5...");
+  delay(1000);
+  Serial.print("4...");
+  delay(1000);
+  Serial.print("3...");
+  delay(1000);
+  Serial.print("2...");
+  delay(1000);
+  Serial.println("1...");
+  delay(1000);
+  Serial.println("Starting demo sequence!\n");
+} // setupsetup()
 
 void loop()
 {
@@ -120,9 +165,9 @@ void loop()
 
   phaseStart = now;
 
-  // phase 0..9 -> demo pixel mode for that index
-  // phase 10 -> go back to random all
-  if (phase <= 9)
+  // phase 0..10 -> demo pixel mode for that index
+  // phase 11 -> go back to random all
+  if (phase <= 10)
   {
     Serial.printf("Demo phase: pixel %u\n", phase);
     demoPixelMode(phase);
@@ -131,7 +176,7 @@ void loop()
   }
 
   // Reset to random across all 10 pixels
-  Serial.println("Back to random (all pixels)");
+  Serial.println("\n\nBack to random (all pixels)");
   startRandomAll();
   phase = 0;
 }

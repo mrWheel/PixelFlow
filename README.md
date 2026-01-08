@@ -205,6 +205,48 @@ leds.setPixel(4,
 ```
 ⸻
 
+## PENDING COMMANDS
+
+**PixelFlow** automatically queues commands for pixels that are blocked by active duration-based animations.
+
+When you send a new command to a pixel that is currently running an animation with `duration > 0`:
+* The new command is stored in a pending queue
+* The current animation continues to run
+* When the current animation's duration expires, the pending command is automatically executed
+
+Example:
+```
+//-- Start random animation on all pixels for 4 seconds
+leds.setPixel(PixelFlow::PIXEL_ALL,
+    "{ \"mode\":\"animate\", \"type\":\"random\", \"duration\":4000, \"end\":\"off\" }");
+
+//-- This command is queued because pixel 5 is blocked
+leds.setPixel(5,
+    "{ \"mode\":\"on\", \"color\":\"#0FFFFF\", \"duration\":4000, \"end\":\"keep\" }");
+
+//-- This command is queued because all pixels are blocked
+//-- The previous setPixel(5) is superseeded by this command
+leds.setPixel(PixelFlow::PIXEL_ALL,
+    "{ \"mode\":\"on\", \"color\":\"#00FF00\", \"duration\":2000, \"end\":\"keep\" }");
+```
+
+Timeline:
+* t=0s: All pixels start random animation
+* t=0s: Pixel 5 receives PURPLE command → queued (blocked)
+* t=0s: All pixels receives GREEN command → queued (blocked)
+* t=4s: Random animation ends, All pixels immediately turns GREEN
+* t=6s: Pixel 5's GREEN animation ends → stays green (end="keep")
+
+Benefits:
+* No race conditions
+* Sequential animations without timing logic
+* Fire-and-forget command chains
+* Pixels remain responsive during transitions
+
+Only one pending command per pixel is stored. A new command overwrites any previous pending command for that pixel.
+
+⸻
+
 ## RAMP / CHASE MODE
 
 Ramp mode creates a moving head with fading tail (comet / chase).
