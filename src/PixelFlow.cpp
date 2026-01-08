@@ -30,7 +30,7 @@ void PixelFlow::begin()
   //-- LET OP: versie nummer ook opnemen in:
   //-- library.json
   //-- library.properties
-    const char* PROG_VERSION = "v1.0.0";
+    const char* PROG_VERSION = "v1.1.0";
     strip.begin();
     strip.show();
 }
