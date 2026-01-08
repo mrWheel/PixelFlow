@@ -247,6 +247,24 @@ enum class EndBehavior : uint8_t
     ON
 };
 
+//-- Struct to hold pending commands for blocked pixels
+struct PendingCommand
+{
+  bool active = false;
+  
+  PixelMode mode = PixelMode::OFF;
+  PixelAnimType animType = PixelAnimType::NONE;
+  
+  uint8_t r = 0;
+  uint8_t g = 0;
+  uint8_t b = 0;
+  
+  uint8_t baseBrightness = 255;
+  uint16_t intervalMs = 500;
+  uint32_t animDurationMs = 0;
+  EndBehavior endBehavior = EndBehavior::KEEP;
+};
+
 struct PixelState
 {
     PixelMode mode = PixelMode::OFF;
@@ -270,6 +288,9 @@ struct PixelState
     // Flags voor blink/pulse/random
     bool toggleState = false;
     float phase = 0.0f;
+    
+    //-- Pending command (for duration-based blocking)
+    PendingCommand pending;
 };
 
 // Groepsanimatie voor RAMP (chase-effect)
@@ -376,6 +397,9 @@ private:
 
     void configureRampFromJson(JsonDocument &doc, const std::vector<int> &targets);
     void stepRamp(uint32_t now);
+    
+    //-- Check if pixel is blocked by active duration-based animation
+    bool isPixelBlocked(int idx, uint32_t now) const;
 };
 
 } // namespace pixelFlow

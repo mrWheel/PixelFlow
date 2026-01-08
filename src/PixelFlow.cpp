@@ -27,6 +27,9 @@ PixelFlow::PixelFlow(uint8_t pin, uint16_t count)
 
 void PixelFlow::begin()
 {
+  //-- LET OP: versie nummer ook opnemen in:
+  //-- library.json
+  //-- library.properties
     const char* PROG_VERSION = "v1.0.0";
     strip.begin();
     strip.show();
@@ -255,6 +258,35 @@ std::vector<int> PixelFlow::targetsFromDocPixelField(JsonDocument &doc) const
     - Overige modes passen PixelState per pixel aan
 ************************************************************/
 
+/************************************************************
+    isPixelBlocked()
+
+    Check if pixel is currently blocked by an active animation
+    with duration > 0 that hasn't expired yet.
+************************************************************/
+
+bool PixelFlow::isPixelBlocked(int idx, uint32_t now) const
+{
+  if (idx < 0 || idx >= (int)numPixels)
+  {
+    return false;
+  }
+
+  const PixelState &p = pixels[idx];
+
+  //-- Any mode with duration > 0 blocks new commands
+  if (p.animDurationMs > 0)
+  {
+    //-- Check if duration hasn't expired yet
+    if (now - p.animStartTime < p.animDurationMs)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void PixelFlow::applyJsonToTargets(JsonDocument &doc, const std::vector<int> &targets)
 {
     if (targets.empty())
@@ -283,6 +315,115 @@ void PixelFlow::applyJsonToTargets(JsonDocument &doc, const std::vector<int> &ta
         }
 
         PixelState &p = pixels[idx];
+
+        //-- Check if pixel is blocked by active duration-based animation
+        if (isPixelBlocked(idx, now))
+        {
+            //-- Store command in pending, overwriting any previous pending command
+            p.pending.active = true;
+
+            //-- Store mode if provided in JSON, else keep current
+            if (modeStr != nullptr)
+            {
+                p.pending.mode = mode;
+            }
+            else
+            {
+                p.pending.mode = p.mode;
+            }
+
+            //-- Store animation type
+            if (doc["type"].is<const char*>())
+            {
+                p.pending.animType = toAnim(doc["type"].as<const char*>());
+            }
+            else
+            {
+                p.pending.animType = p.animType;
+            }
+
+            //-- Store color
+            if (doc["color"].is<const char*>())
+            {
+                PixelState tmp;
+                parseColor(doc["color"], tmp);
+                p.pending.r = tmp.r;
+                p.pending.g = tmp.g;
+                p.pending.b = tmp.b;
+            }
+            else
+            {
+                if (doc["r"].is<int>())
+                {
+                    p.pending.r = doc["r"].as<int>();
+                }
+                else
+                {
+                    p.pending.r = p.r;
+                }
+
+                if (doc["g"].is<int>())
+                {
+                    p.pending.g = doc["g"].as<int>();
+                }
+                else
+                {
+                    p.pending.g = p.g;
+                }
+
+                if (doc["b"].is<int>())
+                {
+                    p.pending.b = doc["b"].as<int>();
+                }
+                else
+                {
+                    p.pending.b = p.b;
+                }
+            }
+
+            //-- Store intensity
+            if (doc["intensity"].is<int>())
+            {
+                p.pending.baseBrightness = doc["intensity"].as<int>();
+            }
+            else
+            {
+                p.pending.baseBrightness = p.baseBrightness;
+            }
+
+            //-- Store interval
+            if (doc["interval"].is<int>())
+            {
+                p.pending.intervalMs = doc["interval"].as<int>();
+            }
+            else
+            {
+                p.pending.intervalMs = p.intervalMs;
+            }
+
+            //-- Store duration
+            if (doc["duration"].is<int>())
+            {
+                p.pending.animDurationMs = doc["duration"].as<int>();
+            }
+            else
+            {
+                p.pending.animDurationMs = 0;
+            }
+
+            //-- Store end behavior
+            if (doc["end"].is<const char*>())
+            {
+                p.pending.endBehavior = toEndBehavior(doc["end"].as<const char*>());
+            }
+            else
+            {
+                p.pending.endBehavior = p.endBehavior;
+            }
+
+            //-- Skip applying the command, continue to next pixel
+            continue;
+        }
 
         // Als we geen mode in JSON hebben, behoud mode
         if (modeStr != nullptr)
@@ -706,42 +847,96 @@ void PixelFlow::update()
 
     MutexLock lock(mutexHandle);
 
-    // 1. Per-pixel ANIMATE modes
+    // 1. Per-pixel modes (duration check for all modes)
     for (int i = 0; i < (int)numPixels; ++i)
     {
         PixelState &p = pixels[i];
 
-        // RAMP mode pixels worden in stepRamp() behandeld
-        if (p.mode != PixelMode::ANIMATE)
+        //-- RAMP mode pixels worden in stepRamp() behandeld
+        if (p.mode == PixelMode::RAMP)
         {
             continue;
         }
 
-        // Duration check
+        //-- Duration check for any mode with active duration
         if (p.animDurationMs > 0 && (now - p.animStartTime >= p.animDurationMs))
         {
-            switch (p.endBehavior)
+            //-- Check if there is a pending command to execute
+            if (p.pending.active)
             {
-                case EndBehavior::KEEP:
-                    p.mode = PixelMode::INTENSITY;
-                    p.animType = PixelAnimType::NONE;
-                    p.animDurationMs = 0;
-                    break;
+                //-- Apply the pending command
+                p.mode = p.pending.mode;
+                p.animType = p.pending.animType;
+                p.r = p.pending.r;
+                p.g = p.pending.g;
+                p.b = p.pending.b;
+                p.baseBrightness = p.pending.baseBrightness;
+                p.intervalMs = p.pending.intervalMs;
+                p.animDurationMs = p.pending.animDurationMs;
+                p.endBehavior = p.pending.endBehavior;
 
-                case EndBehavior::OFF:
-                    p.mode = PixelMode::OFF;
-                    p.animType = PixelAnimType::NONE;
-                    p.currentBrightness = 0;
-                    p.animDurationMs = 0;
-                    break;
+                //-- Reset pending flag
+                p.pending.active = false;
 
-                case EndBehavior::ON:
-                    p.mode = PixelMode::ON;
-                    p.animType = PixelAnimType::NONE;
-                    p.currentBrightness = p.baseBrightness;
-                    p.animDurationMs = 0;
-                    break;
+                //-- Initialize animation state based on mode
+                switch (p.mode)
+                {
+                    case PixelMode::OFF:
+                        p.animType = PixelAnimType::NONE;
+                        p.currentBrightness = 0;
+                        p.animDurationMs = 0;
+                        break;
+
+                    case PixelMode::ON:
+                    case PixelMode::INTENSITY:
+                        p.animType = PixelAnimType::NONE;
+                        p.currentBrightness = p.baseBrightness;
+                        p.animDurationMs = 0;
+                        break;
+
+                    case PixelMode::ANIMATE:
+                        p.toggleState = false;
+                        p.phase = 0.0f;
+                        p.lastUpdate = now;
+                        p.animStartTime = now;
+                        break;
+
+                    default:
+                        break;
+                }
             }
+            else
+            {
+                //-- No pending command, apply end behavior
+                switch (p.endBehavior)
+                {
+                    case EndBehavior::KEEP:
+                        p.mode = PixelMode::INTENSITY;
+                        p.animType = PixelAnimType::NONE;
+                        p.animDurationMs = 0;
+                        break;
+
+                    case EndBehavior::OFF:
+                        p.mode = PixelMode::OFF;
+                        p.animType = PixelAnimType::NONE;
+                        p.currentBrightness = 0;
+                        p.animDurationMs = 0;
+                        break;
+
+                    case EndBehavior::ON:
+                        p.mode = PixelMode::ON;
+                        p.animType = PixelAnimType::NONE;
+                        p.currentBrightness = p.baseBrightness;
+                        p.animDurationMs = 0;
+                        break;
+                }
+            }
+            continue;
+        }
+
+        //-- Animation updates only for ANIMATE mode
+        if (p.mode != PixelMode::ANIMATE)
+        {
             continue;
         }
 
