@@ -27,6 +27,7 @@ PixelFlow::PixelFlow(uint8_t pin, uint16_t count)
 
 void PixelFlow::begin()
 {
+    const char* PROG_VERSION = "v1.0.0";
     strip.begin();
     strip.show();
 }
