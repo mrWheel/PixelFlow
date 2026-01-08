@@ -9,8 +9,11 @@
 # 4. Determine the latest semver-style tag starting with "v".
 # 5. Compare the current version with the latest tag.
 # 6. If the current version is greater than the latest tag, create a new tag and push it to the repository.
-# 7. If the current version is the same or older than the latest tag, skip tagging and log a warning.
-# 8. If no tags exist, create the first tag.
+# 7. Detect if major or minor version changed (vX.Y.Z):
+#    - If X or Y changed: Create a GitHub Release with commit messages
+#    - If only Z changed: Create tag only (patch update)
+# 8. If the current version is the same or older than the latest tag, skip tagging and log a warning.
+# 9. If no tags exist, create the first tag and release.
 #
 
 name: Auto Tag Release
@@ -78,6 +81,7 @@ jobs:
           if [ -z "$LATEST" ]; then
             echo "No existing tag found. Proceeding to tag."
             echo "PROCEED=true" >> $GITHUB_ENV
+            echo "MAKE_RELEASE=true" >> $GITHUB_ENV
           elif [ "$VERSION" = "$LATEST" ]; then
             echo "::warning::Version $VERSION already exists. Skipping tagging."
             echo "PROCEED=false" >> $GITHUB_ENV
@@ -87,6 +91,22 @@ jobs:
           else
             echo "Version $VERSION is newer than $LATEST. Proceeding to tag."
             echo "PROCEED=true" >> $GITHUB_ENV
+            
+            # Parse versions to check if major or minor changed
+            VERSION_MAJOR=$(echo "$VERSION" | sed -E 's/v([0-9]+)\..*/\1/')
+            VERSION_MINOR=$(echo "$VERSION" | sed -E 's/v[0-9]+\.([0-9]+)\..*/\1/')
+            LATEST_MAJOR=$(echo "$LATEST" | sed -E 's/v([0-9]+)\..*/\1/')
+            LATEST_MINOR=$(echo "$LATEST" | sed -E 's/v[0-9]+\.([0-9]+)\..*/\1/')
+            
+            echo "Version: $VERSION_MAJOR.$VERSION_MINOR vs Latest: $LATEST_MAJOR.$LATEST_MINOR"
+            
+            if [ "$VERSION_MAJOR" -gt "$LATEST_MAJOR" ] || [ "$VERSION_MAJOR" -eq "$LATEST_MAJOR" -a "$VERSION_MINOR" -gt "$LATEST_MINOR" ]; then
+              echo "Major or Minor version changed. Will create a Release."
+              echo "MAKE_RELEASE=true" >> $GITHUB_ENV
+            else
+              echo "Only patch version changed. Will create tag only."
+              echo "MAKE_RELEASE=false" >> $GITHUB_ENV
+            fi
           fi
 
       # Step 6: Create and push new tag if approved
@@ -98,3 +118,43 @@ jobs:
           git config user.email "actions@github.com"
           git tag "$VERSION"
           git push origin "$VERSION"
+
+      # Step 7: Generate release notes from commit messages
+      - name: Generate release notes
+        if: env.MAKE_RELEASE == 'true' && env.PROCEED == 'true'
+        id: release_notes
+        run: |
+          VERSION="${{ env.VERSION }}"
+          LATEST="${{ steps.latest_tag.outputs.LATEST }}"
+          
+          echo "## Changes" > release_notes.txt
+          echo "" >> release_notes.txt
+          
+          if [ -z "$LATEST" ]; then
+            echo "No previous tag, getting all commits (max 20)..."
+            git log --pretty=format:"- %s" | head -n 20 >> release_notes.txt
+            echo "" >> release_notes.txt
+            echo "" >> release_notes.txt
+            echo "_First release_" >> release_notes.txt
+          else
+            echo "Getting commits since ${LATEST}..."
+            echo "### Changes since ${LATEST}" >> release_notes.txt
+            echo "" >> release_notes.txt
+            git log ${LATEST}..HEAD --pretty=format:"- %s" >> release_notes.txt
+          fi
+          
+          echo "Release notes generated:"
+          cat release_notes.txt
+
+      # Step 8: Create GitHub Release for major/minor updates
+      - name: Create GitHub Release
+        if: env.MAKE_RELEASE == 'true' && env.PROCEED == 'true'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.VERSION }}
+          release_name: Release ${{ env.VERSION }}
+          body_path: release_notes.txt
+          draft: false
+          prerelease: false
