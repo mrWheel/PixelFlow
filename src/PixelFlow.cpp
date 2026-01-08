@@ -1,12 +1,12 @@
 
 #include "PixelFlow.h"
 
+namespace pixelFlow {
+
 //-- LET OP: versie nummer ook opnemen in:
 //-- library.json
 //-- library.properties
 const char* PROG_VERSION = "v1.1.0";
-
-namespace pixelFlow {
 
 /************************************************************
     PixelFlow Animation Engine (Parallel, Non-Blocking)
