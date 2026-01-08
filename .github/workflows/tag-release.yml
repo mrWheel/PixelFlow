@@ -4,7 +4,7 @@
 #
 # This workflow will:
 # 1. Trigger on push to the main branch.
-# 2. Extract the version from src/<PROGRAM_SRC> in folder <PROGRAM_DIR> (expected format: const char* PROG_VERSION = "v1.2.3";)
+# 2. Extract the version from <PROGRAM_DIR>/<PROGRAM_SRC> (expected format: const char* PROG_VERSION = "v1.2.3";)
 # 3. Fetch all existing tags.
 # 4. Determine the latest semver-style tag starting with "v".
 # 5. Compare the current version with the latest tag.
@@ -17,8 +17,8 @@ name: Auto Tag Release
 
 # Define environment variables at the workflow level
 env:
-  PROGRAM_NAME: "luchtSensor"
-  PROGRAM_SRC: "main.cpp"
+  PROGRAM_NAME: "PixelFlow"
+  PROGRAM_SRC: "PixelFlow.cpp"
   PROGRAM_DIR: "src"
 
 # Run this workflow only when pushing to the main branch
