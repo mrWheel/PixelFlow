@@ -32,7 +32,7 @@ static void demoPixelMode(uint8_t idx)
   {
     case 0:
       Serial.println("Switch pixel " + String(idx) + " ON (green)");
-      leds.setPixel(idx, "{ \"mode\":\"on\", \"color\":\"#00FF00\", \"intensity\":160 }");
+      leds.setPixel(idx, "{ \"mode\":\"on\", \"color\":\"#00FF00\", \"intensity\":160, \"duration\":2000, \"end\":\"off\" }");
       break;
 
     case 1:

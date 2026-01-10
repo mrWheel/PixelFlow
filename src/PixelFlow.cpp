@@ -6,7 +6,7 @@ namespace pixelFlow {
 //-- LET OP: versie nummer ook opnemen in:
 //-- library.json
 //-- library.properties
-const char* PROG_VERSION = "v1.2.2";
+const char* PROG_VERSION = "v1.2.3";
 
 /************************************************************
     PixelFlow Animation Engine (Parallel, Non-Blocking)
@@ -499,7 +499,12 @@ void PixelFlow::applyJsonToTargets(JsonDocument &doc, const std::vector<int> &ta
             case PixelMode::INTENSITY:
                 p.animType = PixelAnimType::NONE;
                 p.currentBrightness = p.baseBrightness;
-                p.animDurationMs = 0;
+                //-- Do not reset animDurationMs - preserve duration from JSON if set
+                //-- This allows "end" behavior to work for mode="on" and mode="intensity"
+                if (p.animDurationMs > 0)
+                {
+                  p.animStartTime = now;
+                }
                 break;
 
             case PixelMode::ANIMATE:
