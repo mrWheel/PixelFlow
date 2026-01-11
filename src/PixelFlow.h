@@ -244,7 +244,8 @@ enum class EndBehavior : uint8_t
 {
     KEEP,
     OFF,
-    ON
+    ON,
+    USE_DEFAULT
 };
 
 //-- Struct to hold pending commands for blocked pixels
@@ -351,16 +352,23 @@ public:
     void setPixel(std::initializer_list<int> pixels, std::initializer_list<const char *> fragments);
 
     // =====================================================
-    // Backward compatibility: oude API met "pixel" in JSON
+    // Default JSON per pixel
     // =====================================================
-    void setPixel(const std::string &json);
-    void setPixel(std::initializer_list<const char *> fragments);
+
+    //-- Sla default JSON op voor een specifieke pixel
+    void setDefaultPixel(int pixel, const std::string &json);
+
+    //-- Pas de opgeslagen default configuratie toe op een pixel (als deze bestaat)
+    void applyDefaultPixel(int pixel);
 
 private:
     uint8_t pin;
     uint16_t numPixels;
     Adafruit_NeoPixel strip;
     std::vector<PixelState> pixels;
+    
+    std::vector<std::string> defaults;
+    std::vector<bool> hasDefault;
 
     SemaphoreHandle_t mutexHandle;
     TaskHandle_t taskHandle;
@@ -381,9 +389,6 @@ private:
     // Helpers: JSON merge + parsing
     // =====================================================
     bool mergeFragmentsIntoDoc(JsonDocument &doc, std::initializer_list<const char *> fragments);
-
-    // Backward compat: haal targets uit doc["pixel"]
-    std::vector<int> targetsFromDocPixelField(JsonDocument &doc) const;
 
     // Pas instellingen toe op targets
     void applyJsonToTargets(JsonDocument &doc, const std::vector<int> &targets);

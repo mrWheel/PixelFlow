@@ -6,7 +6,7 @@ namespace pixelFlow {
 //-- LET OP: versie nummer ook opnemen in:
 //-- library.json
 //-- library.properties
-const char* PROG_VERSION = "v1.2.3";
+const char* PROG_VERSION = "v2.0.0";
 
 /************************************************************
     PixelFlow Animation Engine (Parallel, Non-Blocking)
@@ -26,8 +26,10 @@ PixelFlow::PixelFlow(uint8_t pin, uint16_t count)
       mutexHandle(nullptr),
       taskHandle(nullptr)
 {
-    pixels.resize(numPixels);
-    mutexHandle = xSemaphoreCreateMutex();
+  pixels.resize(numPixels);
+  defaults.resize(numPixels);
+  hasDefault.resize(numPixels, false);
+  mutexHandle = xSemaphoreCreateMutex();
 }
 
 void PixelFlow::begin()
@@ -101,6 +103,7 @@ EndBehavior PixelFlow::toEndBehavior(const char *s)
 
     if (!strcasecmp(s, "off")) return EndBehavior::OFF;
     if (!strcasecmp(s, "on")) return EndBehavior::ON;
+    if (!strcasecmp(s, "default")) return EndBehavior::USE_DEFAULT;
     return EndBehavior::KEEP;
 }
 
@@ -195,59 +198,6 @@ bool PixelFlow::mergeFragmentsIntoDoc(JsonDocument &doc, std::initializer_list<c
     return true;
 }
 
-/************************************************************
-    Backward compatibility: targets uit doc["pixel"]
-
-    Ondersteunt:
-        - ontbrekend of "all" -> alle pixels
-        - int -> één pixel
-        - array -> lijst
-
-    Let op: deze functie bestaat zodat oudere code met "pixel"
-    in JSON blijft werken.
-************************************************************/
-
-std::vector<int> PixelFlow::targetsFromDocPixelField(JsonDocument &doc) const
-{
-    std::vector<int> targets;
-
-    JsonVariantConst pv = doc["pixel"];
-
-    if (pv.isNull() || (pv.is<const char*>() && !strcasecmp(pv.as<const char*>(), "all")))
-    {
-        targets.reserve(numPixels);
-        for (int i = 0; i < (int)numPixels; ++i)
-        {
-            targets.push_back(i);
-        }
-        return targets;
-    }
-
-    if (pv.is<int>())
-    {
-        int idx = pv.as<int>();
-        if (idx >= 0 && idx < (int)numPixels)
-        {
-            targets.push_back(idx);
-        }
-        return targets;
-    }
-
-    if (pv.is<JsonArrayConst>())
-    {
-        for (JsonVariantConst v : pv.as<JsonArrayConst>())
-        {
-            int idx = v.as<int>();
-            if (idx >= 0 && idx < (int)numPixels)
-            {
-                targets.push_back(idx);
-            }
-        }
-        return targets;
-    }
-
-    return targets;
-}
 
 /************************************************************
     applyJsonToTargets()
@@ -492,7 +442,12 @@ void PixelFlow::applyJsonToTargets(JsonDocument &doc, const std::vector<int> &ta
             case PixelMode::OFF:
                 p.animType = PixelAnimType::NONE;
                 p.currentBrightness = 0;
-                p.animDurationMs = 0;
+                //-- Do not reset animDurationMs - preserve duration from JSON if set
+                //-- This allows "end" behavior to work for mode="off"
+                if (p.animDurationMs > 0)
+                {
+                  p.animStartTime = now;
+                }
                 break;
 
             case PixelMode::ON:
@@ -526,61 +481,32 @@ void PixelFlow::applyJsonToTargets(JsonDocument &doc, const std::vector<int> &ta
     samengevoegd worden tot één config.
 ************************************************************/
 
-void PixelFlow::setPixel(std::initializer_list<const char*> fragments)
-{
-    JsonDocument merged;
-    mergeFragmentsIntoDoc(merged, fragments);
-
-    std::string json;
-    serializeJson(merged, json);
-    setPixel(json);
-}
-
 void PixelFlow::setPixel(int pixel, std::initializer_list<const char*> fragments)
 {
-    JsonDocument merged;
-    mergeFragmentsIntoDoc(merged, fragments);
+  JsonDocument merged;
+  mergeFragmentsIntoDoc(merged, fragments);
 
-    std::string json;
-    serializeJson(merged, json);
-    setPixel(pixel, json);
+  std::string json;
+  serializeJson(merged, json);
+  setPixel(pixel, json);
 }
 
 void PixelFlow::setPixel(std::initializer_list<int> px, std::initializer_list<const char*> fragments)
 {
-    JsonDocument merged;
-    mergeFragmentsIntoDoc(merged, fragments);
+  JsonDocument merged;
+  mergeFragmentsIntoDoc(merged, fragments);
 
-    std::string json;
-    serializeJson(merged, json);
-    setPixel(px, json);
+  std::string json;
+  serializeJson(merged, json);
+  setPixel(px, json);
 }
 
 /************************************************************
     setPixel() - string variants
 
-    - Variant zonder expliciete selector blijft bestaan voor
-      compatibiliteit en leest optioneel doc["pixel"].
-    - Varianten met selector gebruiken de C++ selectie en
-      verwachten dat JSON géén pixel selectie hoeft te bevatten.
+    Varianten met selector gebruiken de C++ selectie en
+    verwachten dat JSON géén pixel selectie hoeft te bevatten.
 ************************************************************/
-
-void PixelFlow::setPixel(const std::string &json)
-{
-    JsonDocument doc;
-    auto err = deserializeJson(doc, json);
-
-    if (err)
-    {
-        Serial.printf("JSON parse error: %s\n", err.c_str());
-        return;
-    }
-
-    MutexLock lock(mutexHandle);
-
-    std::vector<int> targets = targetsFromDocPixelField(doc);
-    applyJsonToTargets(doc, targets);
-}
 
 void PixelFlow::setPixel(int pixel, const std::string &json)
 {
@@ -747,6 +673,25 @@ void PixelFlow::stepRamp(uint32_t now)
                     p.baseBrightness = ramp.maxIntensity;
                     p.currentBrightness = ramp.maxIntensity;
                     p.animDurationMs = 0;
+                }
+                break;
+
+            case EndBehavior::USE_DEFAULT:
+                //-- Apply default configuration for each pixel if it exists
+                for (int idx : ramp.indices)
+                {
+                    if (hasDefault[idx])
+                    {
+                        applyDefaultPixel(idx);
+                    }
+                    else
+                    {
+                        //-- No default, fallback to KEEP behavior
+                        PixelState &p = pixels[idx];
+                        p.mode = PixelMode::INTENSITY;
+                        p.animType = PixelAnimType::NONE;
+                        p.animDurationMs = 0;
+                    }
                 }
                 break;
         }
@@ -938,6 +883,25 @@ void PixelFlow::update()
                         p.currentBrightness = p.baseBrightness;
                         p.animDurationMs = 0;
                         break;
+
+                    case EndBehavior::USE_DEFAULT:
+                        //-- Apply default configuration if it exists
+                        if (hasDefault[i])
+                        {
+                            //-- Temporarily release mutex to avoid deadlock
+                            lock.~MutexLock();
+                            applyDefaultPixel(i);
+                            //-- Re-acquire mutex by creating new lock
+                            new (&lock) MutexLock(mutexHandle);
+                        }
+                        else
+                        {
+                            //-- No default, fallback to KEEP behavior
+                            p.mode = PixelMode::INTENSITY;
+                            p.animType = PixelAnimType::NONE;
+                            p.animDurationMs = 0;
+                        }
+                        break;
                 }
             }
             continue;
@@ -1011,6 +975,48 @@ void PixelFlow::applyStateToStrip()
     }
 
     strip.show();
+}
+
+/************************************************************
+    setDefaultPixel()
+
+    Slaat een default JSON configuratie op voor een specifieke pixel.
+    Deze default kan later worden toegepast op de pixel.
+************************************************************/
+
+void PixelFlow::setDefaultPixel(int pixel, const std::string &json)
+{
+  if (pixel < 0 || pixel >= (int)numPixels)
+  {
+    return;
+  }
+
+  MutexLock lock(mutexHandle);
+
+  defaults[pixel] = json;
+  hasDefault[pixel] = true;
+}
+
+/************************************************************
+    applyDefaultPixel()
+
+    Past de opgeslagen default configuratie toe op een pixel
+    als deze bestaat (hasDefault[pixel] == true).
+************************************************************/
+
+void PixelFlow::applyDefaultPixel(int pixel)
+{
+  if (pixel < 0 || pixel >= (int)numPixels)
+  {
+    return;
+  }
+
+  if (!hasDefault[pixel])
+  {
+    return;
+  }
+
+  setPixel(pixel, defaults[pixel]);
 }
 
 } // namespace pixelFlow

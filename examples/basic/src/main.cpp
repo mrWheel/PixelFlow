@@ -31,63 +31,98 @@ static void demoPixelMode(uint8_t idx)
   switch (idx)
   {
     case 0:
-      Serial.println("Switch pixel " + String(idx) + " ON (green)");
-      leds.setPixel(idx, "{ \"mode\":\"on\", \"color\":\"#00FF00\", \"intensity\":160, \"duration\":2000, \"end\":\"off\" }");
+      Serial.println("\nSwitch pixel " + String(idx) + " ON (green) for 4 seconds, then off");
+      leds.setPixel(idx, "{ \"mode\":\"on\", \"color\":\"#00FF00\", \"intensity\":160, \"duration\":4000, \"end\":\"off\" }");
       break;
 
     case 1:
-      Serial.println("Switch pixel " + String(idx) + " OFF");  // OFF
-      leds.setPixel(idx, "{ \"mode\":\"off\" }");
+      // SET DEFAULT to WHITE first
+      Serial.println("\nSet pixel DEFAULT" + String(idx) + " to WHITE first");
+      leds.setDefaultPixel(idx, "{ \"mode\":\"on\", \"color\":\"#FFFFFF\", \"intensity\":100 }");
+      Serial.println("Switch pixel " + String(idx) + " OFF for 4 seconds, then default");  // OFF
+      leds.setPixel(idx, "{ \"mode\":\"off\", \"duration\":4000, \"end\":\"default\" }");
+      Serial.print("4...");
+      delay(1000);
+      Serial.print("3...");
+      delay(1000);
+      Serial.print("2...");
+      delay(1000);
+      Serial.println("1...");
+      delay(1000);
+      Serial.println("[WHITE] .. continue demo\n");
       break;
 
     case 2:
-      // INTENSITY (dim white)
-      Serial.println("Set pixel " + String(idx) + " to INTENSITY (dim white)");
-      leds.setPixel(idx, "{ \"mode\":\"intensity\", \"color\":\"#FFFFFF\", \"intensity\":40 }");
+      // SET DEFAULT to RED first
+      Serial.println("\nSet pixel " + String(idx) + " to RED first");
+      leds.setDefaultPixel(idx, "{ \"mode\":\"on\", \"color\":\"#FF0000\", \"intensity\":100 }");
+      // ANIMATE: PULSE (blue)
+      Serial.println("Set pixel " + String(idx) + " to ANIMATE: PULSE (blue) for 3 seconds");
+      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"blink\", \"color\":\"#0000FF\", \"interval\":250, \"duration\":3000, \"end\":\"default\" }");
+      Serial.println("Wait for 3 seconds, After that, applying DEFAULT (red)");
+      Serial.print("4...");
+      delay(1000);
+      Serial.print("3...");
+      delay(1000);
+      Serial.print("2...");
+      delay(1000);
+      Serial.print("[ RED] 1...");
+      delay(1000);
+      Serial.println(".. continue demo\n");
       break;
 
     case 3:
       // ANIMATE: BLINK (red)
-      Serial.println("Set pixel " + String(idx) + " to ANIMATE: BLINK (red)");
+      Serial.println("\nSet pixel " + String(idx) + " to ANIMATE: BLINK (red)");
       leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"blink\", \"color\":\"#FF0000\", \"interval\":150, \"duration\":0, \"end\":\"keep\" }");
       break;
 
     case 4:
       // ANIMATE: PULSE (groen)
-      Serial.println("Set pixel " + String(idx) + " to ANIMATE: PULSE (green)");
+      Serial.println("\nSet pixel " + String(idx) + " to ANIMATE: PULSE (green)");
       leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"pulse\", \"color\":\"#00FF00\", \"interval\":150, \"duration\":0, \"end\":\"keep\" }");
       break;
 
     case 5:
-      // ANIMATE: PULSE (blue)
-      Serial.println("Set pixel " + String(idx) + " to ANIMATE: PULSE (blue)");
-      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"pulse\", \"color\":\"#0000FF\", \"interval\":150, \"duration\":0, \"end\":\"keep\" }");
+      // INTENSITY (dim white)
+      Serial.println("\nSet pixel " + String(idx) + " to INTENSITY (dim white)");
+      leds.setPixel(idx, "{ \"mode\":\"intensity\", \"color\":\"#FFFFFF\", \"intensity\":40 }");
       break;
 
     case 6:
       // ANIMATE: RANDOM (fast)
-      Serial.println("Set pixel " + String(idx) + " to ANIMATE: RANDOM (fast)");
-      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"random\", \"interval\":80, \"intensity\":200, \"duration\":0, \"end\":\"keep\" }");
+      Serial.println("\nSet pixel " + String(idx) + " to ANIMATE: RANDOM (fast)");
+      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"random\", \"interval\":80, \"intensity\":200, \"duration\":0, \"end\":\"default\" }");
       break;
 
     case 7:
       // RAMP (up) across a subset (0..9) doesn't make sense per-pixel, so we demo a short ramp on ALL
       // but to keep the "per pixel 0-9" story, we trigger it when idx==6.
-      Serial.println("Set ALL pixels to RAMP UP (gray) for 2.5 seconds");
+      Serial.println("\nSet ALL pixels to RAMP UP (gray) for 2.5 seconds");
       leds.setPixel(PixelFlow::PIXEL_ALL,
           "{ \"mode\":\"ramp\", \"type\":\"up\", \"width\":4, \"color\":\"#202020\", \"interval\":35, \"intensity\":180, \"duration\":2500, \"end\":\"keep\" }");
-      break;
+      Serial.print("2...");
+      delay(1000);
+      Serial.println("1...");
+      delay(1000);
+      Serial.println(".. continue demo\n");
+    break;
 
     case 8:
       // ON (purple)
-      Serial.println("Switch pixel " + String(idx) + " ON (purple)");
+      Serial.println("\nSwitch pixel " + String(idx) + " ON (purple)");
       leds.setPixel(idx, "{ \"mode\":\"on\", \"color\":\"#8000FF\", \"intensity\":180 }");
       break;
 
     case 9:
       // OFF then ON after a short duration-like behavior: do a blink that ends OFF
-      Serial.println("Set pixel " + String(idx) + " to BLINK that ends ON");
-      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"blink\", \"color\":\"#FFFFFF\", \"interval\":120, \"duration\":1200, \"end\":\"on\" }");
+      Serial.println("\nSet pixel " + String(idx) + " to BLINK that ends ON");
+      leds.setPixel(idx, "{ \"mode\":\"animate\", \"type\":\"blink\", \"color\":\"#FFFFFF\", \"interval\":120, \"duration\":2000, \"end\":\"on\" }");
+      Serial.print("2...");
+      delay(1000);
+      Serial.println("1...");
+      delay(1000);
+      Serial.println(".. continue demo\n");
       break;
 
     default:

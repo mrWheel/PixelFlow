@@ -107,14 +107,14 @@ The JSON describes what should happen to the selected pixels.
 Supported fields:
 
 ```
-mode        "off" | "on" | "intensity" | "animate" | "ramp"
+mode        “off” | “on” | “intensity” | “animate” | “ramp”
 type        depends on mode
-color       "#RRGGBB" or "random"
+color       “#RRGGBB” or “random”
 r, g, b     numeric color components (optional alternative)
 intensity   0..255
 interval    milliseconds
 duration    milliseconds, 0 = infinite
-end         "keep" | "off" | "on" | "default"
+end         “keep” | “off” | “on”
 width       ramp only
 ```
 ⸻
@@ -187,34 +187,21 @@ Stops after that time.
 
 end defines what happens when the animation ends:
 
-`end = "keep"`
+`end = “keep”`
 Pixel remains in its last visual state.
 
-`end = "off"`
+`end = “off”`
 Pixel turns off.
 
-`end = "on"`
+`end = “on”`
 Pixel turns on at full brightness.
-
-`end = "default"`
-Pixel returns to its default configuration (if set with setDefaultPixel). If no default exists, behaves like "keep".
 
 Example:
 
 Blink LED for 2 seconds then stay on:
 ```
 leds.setPixel(4,
-"{ "mode":"animate", "type":"blink", "interval":100, "duration":2000, "end":"on" }");
-```
-
-Return to default after animation:
-```
-//-- Set default first
-leds.setDefaultPixel(4, "{ \"mode\":\"on\", \"color\":\"#00FF00\", \"intensity\":50 }");
-
-//-- Blink red for 3 seconds, then return to default green state
-leds.setPixel(4,
-"{ \"mode\":\"animate\", \"type\":\"blink\", \"color\":\"#FF0000\", \"duration\":3000, \"end\":\"default\" }");
+“{ "mode":"animate", "type":"blink", "interval":100, "duration":2000, "end":"on" }”);
 ```
 ⸻
 
@@ -277,7 +264,7 @@ color      “#RRGGBB” or “random”
 interval   milliseconds per step
 intensity  max brightness
 duration   milliseconds (0 = infinite)
-end        "keep" | "off" | "on" | "default"
+end        “keep” | “off” | “on”
 
 Behavior:
 * Head fades in
@@ -315,68 +302,11 @@ This is especially useful when building commands dynamically.
 
 ⸻
 
-## DEFAULT PIXEL CONFIGURATIONS
-
-**PixelFlow** allows you to store a default JSON configuration per pixel that can be applied later.
-
-This is useful for:
-* Restoring a known state
-* Implementing "home" or "idle" states
-* Quick state transitions
-
-### Store a default configuration
-
-```
-leds.setDefaultPixel(5, "{ \"mode\":\"on\", \"color\":\"#00FF00\", \"intensity\":100 }");
-```
-
-This stores the JSON configuration for pixel 5 but does not apply it yet.
-
-### Apply the default configuration
-
-```
-leds.applyDefaultPixel(5);
-```
-
-If a default was set for pixel 5 (using setDefaultPixel), it will be applied.
-If no default exists, the call does nothing.
-
-### Example: Status LED with default state
-
-```
-#define LED_STATUS 3
-
-void setup()
-{
-  leds.begin();
-  leds.startTask();
-  
-  //-- Define default state for status LED
-  leds.setDefaultPixel(LED_STATUS, "{ \"mode\":\"on\", \"color\":\"#0000FF\", \"intensity\":50 }");
-  
-  //-- Apply it immediately
-  leds.applyDefaultPixel(LED_STATUS);
-}
-
-void onError()
-{
-  //-- Blink red for 3 seconds
-  leds.setPixel(LED_STATUS, 
-    "{ \"mode\":\"animate\", \"type\":\"blink\", \"color\":\"#FF0000\", \"duration\":3000 }");
-  
-  //-- After 3 seconds, automatically return to default blue state
-  delay(3000);
-  leds.applyDefaultPixel(LED_STATUS);
-}
-```
-
-⸻
-
 ## THREAD SAFETY
 
-All setPixel, setDefaultPixel and applyDefaultPixel calls are mutex-protected.
+All setPixel calls are mutex-protected.
 
-You can call these functions from:
+You can call setPixel from:
 * main loop
 * WiFi callbacks
 * MQTT handlers
@@ -412,4 +342,4 @@ all at the same time on one strip.
 
 ## LICENSE
 
-MIT license
+MIT license 
