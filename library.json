@@ -1,6 +1,6 @@
 {
   "name": "PixelFlow",
-  "version": "1.2.2",
+  "version": "2.0.1",
   "description": "Realtime parallel LED animation engine for ESP32 (FreeRTOS, JSON control)",
   "authors": [{
       "name": "Willem Aandewiel (mnrWheel)",

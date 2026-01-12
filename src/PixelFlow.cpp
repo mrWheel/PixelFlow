@@ -6,7 +6,7 @@ namespace pixelFlow {
 //-- LET OP: versie nummer ook opnemen in:
 //-- library.json
 //-- library.properties
-const char* PROG_VERSION = "v2.0.0";
+const char* PROG_VERSION = "v2.0.1";
 
 /************************************************************
     PixelFlow Animation Engine (Parallel, Non-Blocking)
@@ -986,15 +986,34 @@ void PixelFlow::applyStateToStrip()
 
 void PixelFlow::setDefaultPixel(int pixel, const std::string &json)
 {
-  if (pixel < 0 || pixel >= (int)numPixels)
-  {
-    return;
-  }
-
   MutexLock lock(mutexHandle);
 
-  defaults[pixel] = json;
-  hasDefault[pixel] = true;
+  std::vector<int> targets = makeTargets(pixel);
+
+  for (int idx : targets)
+  {
+    defaults[idx] = json;
+    hasDefault[idx] = true;
+  }
+}
+
+/************************************************************
+    setDefaultPixel() - initializer_list variant
+
+    Slaat een default JSON configuratie op voor meerdere pixels.
+************************************************************/
+
+void PixelFlow::setDefaultPixel(std::initializer_list<int> pixels, const std::string &json)
+{
+  MutexLock lock(mutexHandle);
+
+  std::vector<int> targets = makeTargets(pixels);
+
+  for (int idx : targets)
+  {
+    defaults[idx] = json;
+    hasDefault[idx] = true;
+  }
 }
 
 /************************************************************
@@ -1006,17 +1025,34 @@ void PixelFlow::setDefaultPixel(int pixel, const std::string &json)
 
 void PixelFlow::applyDefaultPixel(int pixel)
 {
-  if (pixel < 0 || pixel >= (int)numPixels)
-  {
-    return;
-  }
+  std::vector<int> targets = makeTargets(pixel);
 
-  if (!hasDefault[pixel])
+  for (int idx : targets)
   {
-    return;
+    if (hasDefault[idx])
+    {
+      setPixel(idx, defaults[idx]);
+    }
   }
+}
 
-  setPixel(pixel, defaults[pixel]);
+/************************************************************
+    applyDefaultPixel() - initializer_list variant
+
+    Past de opgeslagen default configuratie toe op meerdere pixels.
+************************************************************/
+
+void PixelFlow::applyDefaultPixel(std::initializer_list<int> pixels)
+{
+  std::vector<int> targets = makeTargets(pixels);
+
+  for (int idx : targets)
+  {
+    if (hasDefault[idx])
+    {
+      setPixel(idx, defaults[idx]);
+    }
+  }
 }
 
 } // namespace pixelFlow

@@ -358,8 +358,14 @@ public:
     //-- Sla default JSON op voor een specifieke pixel
     void setDefaultPixel(int pixel, const std::string &json);
 
+    //-- Sla default JSON op voor meerdere pixels
+    void setDefaultPixel(std::initializer_list<int> pixels, const std::string &json);
+
     //-- Pas de opgeslagen default configuratie toe op een pixel (als deze bestaat)
     void applyDefaultPixel(int pixel);
+
+    //-- Pas de opgeslagen default configuratie toe op meerdere pixels
+    void applyDefaultPixel(std::initializer_list<int> pixels);
 
 private:
     uint8_t pin;
